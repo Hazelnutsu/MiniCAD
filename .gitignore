@@ -1,0 +1,29 @@
+# Build output
+/build/
+/out/
+
+# CMake-generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+Makefile
+
+# Compiled artifacts
+*.obj
+*.o
+*.exe
+*.dll
+*.so
+*.dylib
+*.lib
+*.a
+*.pdb
+
+# Editors and operating systems
+.vs/
+.vscode/
+.idea/
+*.user
+.DS_Store
+Thumbs.db
