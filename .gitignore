@@ -1,5 +1,6 @@
 # Build output
 /build/
+/build-*/
 /out/
 
 # CMake-generated files
@@ -8,6 +9,8 @@ CMakeFiles/
 cmake_install.cmake
 CTestTestfile.cmake
 Makefile
+compile_commands.json
+install_manifest.txt
 
 # Compiled artifacts
 *.obj
@@ -27,3 +30,5 @@ Makefile
 *.user
 .DS_Store
 Thumbs.db
+
+AGENTS.md
