@@ -1,8 +1,13 @@
 #pragma once
+#include "minicad/numeric.hpp"
+
 
 namespace minicad {
-    struct Point {
-        double x{};
-        double y{};
+    struct Point2D {
+        double x;
+        double y;
     };
+
+    double distance(const Point2D& a, const Point2D& b);
+    bool approximatelyEqual(const Point2D& a, const Point2D& b);
 }

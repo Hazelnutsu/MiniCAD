@@ -8,6 +8,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_library(minicad_lib
     src/minicad.cpp
+    src/point.cpp
+    src/vector2D.cpp
+    src/numeric.cpp
 )
 
 target_include_directories(minicad_lib PUBLIC include)
@@ -22,8 +25,30 @@ else()
 endif()
 
 include(CTest)
+
 if(BUILD_TESTING)
-    add_executable(minicad_tests tests/minicad_test.cpp)
-    target_link_libraries(minicad_tests PRIVATE minicad_lib)
-    add_test(NAME minicad_tests COMMAND minicad_tests)
+    include(FetchContent)
+
+    FetchContent_Declare(
+        Catch2
+        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+        GIT_TAG v3.15.3
+        GIT_SHALLOW TRUE
+    )
+
+    FetchContent_MakeAvailable(Catch2)
+
+    add_executable(minicad_tests
+        tests/minicad_test.cpp
+    )
+
+    target_link_libraries(minicad_tests
+        PRIVATE
+            minicad_lib
+            Catch2::Catch2WithMain
+    )
+
+    list(APPEND CMAKE_MODULE_PATH "${catch2_SOURCE_DIR}/extras")
+    include(Catch)
+    catch_discover_tests(minicad_tests)
 endif()
