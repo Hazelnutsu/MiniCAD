@@ -16,6 +16,39 @@ TEST_CASE("distance calculates the distance between two points") {
     CHECK(minicad::distance(a, a) == Approx(0.0));
 }
 
+TEST_CASE("vectorBetween calculates the vector between two points") {
+    const minicad::Point2D from{1.0, 2.0};
+    const minicad::Point2D to{4.0, 6.0};
+
+    const minicad::Vector2D result = minicad::vectorBetween(from, to);
+
+    CHECK(result.x == Approx(3.0));
+    CHECK(result.y == Approx(4.0));
+}
+
+TEST_CASE("vector addition adds corresponding coordinates") {
+    const minicad::Vector2D result = minicad::Vector2D{1.0, 2.0}
+        + minicad::Vector2D{3.0, 4.0};
+
+    CHECK(result.x == Approx(4.0));
+    CHECK(result.y == Approx(6.0));
+}
+
+TEST_CASE("vector subtraction subtracts corresponding coordinates") {
+    const minicad::Vector2D result = minicad::Vector2D{5.0, 7.0}
+        - minicad::Vector2D{2.0, 3.0};
+
+    CHECK(result.x == Approx(3.0));
+    CHECK(result.y == Approx(4.0));
+}
+
+TEST_CASE("scalar multiplication scales both coordinates") {
+    const minicad::Vector2D result = minicad::Vector2D{2.0, -3.0} * 2.5;
+
+    CHECK(result.x == Approx(5.0));
+    CHECK(result.y == Approx(-7.5));
+}
+
 TEST_CASE("magnitude calculates a vector's length") {
     CHECK(minicad::magnitude({3.0, 4.0}) == Approx(5.0));
     CHECK(minicad::magnitude({0.0, 0.0}) == Approx(0.0));
