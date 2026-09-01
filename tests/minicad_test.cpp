@@ -49,6 +49,18 @@ TEST_CASE("scalar multiplication scales both coordinates") {
     CHECK(result.y == Approx(-7.5));
 }
 
+TEST_CASE("vectorBetween allows a zero-length segment") {
+    const minicad::Point2D start{5.0, 5.0};
+    const minicad::Point2D end{5.0, 5.0};
+
+    const minicad::Vector2D result =
+        minicad::vectorBetween(start, end);
+
+    CHECK(result.x == Approx(0.0));
+    CHECK(result.y == Approx(0.0));
+    CHECK(minicad::magnitude(result) == Approx(0.0));
+}
+
 TEST_CASE("magnitude calculates a vector's length") {
     CHECK(minicad::magnitude({3.0, 4.0}) == Approx(5.0));
     CHECK(minicad::magnitude({0.0, 0.0}) == Approx(0.0));

@@ -22,16 +22,20 @@ namespace minicad{
         Vector2D v{x, y};
         return v;
     }
+
     Vector2D operator*(const Vector2D& v, double scalar){
         return Vector2D{v.x * scalar, v.y * scalar};
     }
+
     double magnitude(const Vector2D& v){
         double mag = v.x * v.x + v.y * v.y;
         return std::sqrt(mag);
     }
+
     double dot(const Vector2D& a, const Vector2D& b){
         return a.x * b.x + a.y * b.y;
     }
+    
     Vector2D normalize(const Vector2D& v){
         if(v.x == 0 && v.y == 0){
             return v;
