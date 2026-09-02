@@ -1,5 +1,4 @@
 #pragma once
-#include "minicad/numeric.hpp"
 
 
 namespace minicad {

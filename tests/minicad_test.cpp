@@ -115,12 +115,49 @@ TEST_CASE("segment orientation classifies points relative to the segment") {
     CHECK(segment.orientation({2.0, 0.0}) == minicad::Orientation::Collinear);
 }
 
+TEST_CASE("segment orientation treats near-collinear points within tolerance as collinear") {
+    const minicad::Segment segment{{0.0, 0.0}, {4.0, 0.0}};
+
+    CHECK(segment.orientation({2.0, minicad::epsilon / 8.0}) ==
+          minicad::Orientation::Collinear);
+    CHECK(segment.orientation({2.0, minicad::epsilon / 2.0}) ==
+          minicad::Orientation::Counterclockwise);
+    CHECK(segment.orientation({2.0, -minicad::epsilon / 2.0}) ==
+          minicad::Orientation::Clockwise);
+}
+
+TEST_CASE("segment contains points within endpoint tolerance but rejects points beyond it") {
+    const minicad::Segment segment{{0.0, 0.0}, {4.0, 0.0}};
+
+    CHECK(segment.contains({0.0, 0.0}));
+    CHECK(segment.contains({2.0, 0.0}));
+    CHECK(segment.contains({4.0 + minicad::epsilon / 2.0, 0.0}));
+    CHECK_FALSE(segment.contains({4.0 + minicad::epsilon * 2.0, 0.0}));
+    CHECK_FALSE(segment.contains({2.0, minicad::epsilon / 2.0}));
+}
+
+TEST_CASE("intersects detects crossing, disjoint, touching, and overlapping segments") {
+    const minicad::Segment crossingA{{0.0, 0.0}, {4.0, 4.0}};
+    const minicad::Segment crossingB{{0.0, 4.0}, {4.0, 0.0}};
+    CHECK(minicad::intersects(crossingA, crossingB));
+
+    const minicad::Segment disjointA{{0.0, 0.0}, {1.0, 1.0}};
+    const minicad::Segment disjointB{{2.0, 0.0}, {3.0, 1.0}};
+    CHECK_FALSE(minicad::intersects(disjointA, disjointB));
+
+    const minicad::Segment touching{{4.0, 4.0}, {6.0, 2.0}};
+    CHECK(minicad::intersects(crossingA, touching));
+
+    const minicad::Segment overlapping{{2.0, 2.0}, {6.0, 6.0}};
+    CHECK(minicad::intersects(crossingA, overlapping));
+}
+
 TEST_CASE("approximatelyEqual compares scalar values") {
     CHECK(minicad::approximatelyEqual(
-        1.0, 1.0 + minicad::EPSILON / 2.0, minicad::EPSILON));
+        1.0, 1.0 + minicad::epsilon / 2.0, minicad::epsilon));
 
     CHECK_FALSE(minicad::approximatelyEqual(
-        1.0, 1.0 + minicad::EPSILON * 2.0, minicad::EPSILON));
+        1.0, 1.0 + minicad::epsilon * 2.0, minicad::epsilon));
 }
 
 TEST_CASE("approximatelyEqual compares points") {
@@ -128,10 +165,10 @@ TEST_CASE("approximatelyEqual compares points") {
 
     CHECK(minicad::approximatelyEqual(
         point,
-        {1.0 + minicad::EPSILON / 2.0,
-         2.0 - minicad::EPSILON / 2.0}));
+        {1.0 + minicad::epsilon / 2.0,
+         2.0 - minicad::epsilon / 2.0}));
 
     CHECK_FALSE(minicad::approximatelyEqual(
         point,
-        {1.0 + minicad::EPSILON * 2.0, 2.0}));
+        {1.0 + minicad::epsilon * 2.0, 2.0}));
 }

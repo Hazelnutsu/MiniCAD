@@ -1,5 +1,7 @@
 #include "minicad/segment.hpp"
 #include "minicad/vector2D.hpp"
+#include "minicad/numeric.hpp"
+#include <cmath>
 #include <algorithm>
 
 namespace minicad {
@@ -22,6 +24,13 @@ namespace minicad {
 
         return Point2D{midx, midy};
     }
+    const Point2D& Segment::start() const {
+        return start_;
+    }
+    
+    const Point2D& Segment::end() const {
+        return end_;
+    }
 
     Orientation Segment:: orientation(const Point2D& p) const {
 
@@ -29,15 +38,65 @@ namespace minicad {
         Vector2D ap = vectorBetween(start_, p);
         double cross = ab.x * ap.y - ab.y * ap.x;
 
+        if(std::abs(cross) <= epsilon) {
+            return Orientation::Collinear;
+        }
+
         if(cross > 0) {
             return Orientation::Counterclockwise;
         }
 
-        if(cross < 0) {
-            return Orientation::Clockwise;
+        return Orientation::Clockwise;
+    }
+    
+    bool Segment::contains(const Point2D& p) const {
+        
+        if(orientation(p) == Orientation::Collinear) {
+
+            double minX = std::min(start_.x, end_.x);
+            double maxX = std::max(start_.x, end_.x);
+            double minY = std::min(start_.y, end_.y);
+            double maxY = std::max(start_.y, end_.y);
+
+            if(p.x >= minX - epsilon && p.x <= maxX + epsilon &&
+                 p.y >= minY - epsilon && p.y <= maxY + epsilon) {
+                return true;
+            }
+        }
+        return false;
+    }
+    bool intersects(const Segment& a, const Segment& b) {
+
+        if(a.contains(b.start()) || a.contains(b.end()) 
+        || b.contains(a.start()) || b.contains(a.end())){
+
+            return true;
         }
 
-        return Orientation::Collinear;
+        Orientation aStart = b.orientation(a.start());
+        Orientation aEnd   = b.orientation(a.end());
+
+        Orientation bStart = a.orientation(b.start());
+        Orientation bEnd   = a.orientation(b.end());
+
+        bool aCrossesB =
+            (aStart == Orientation::Clockwise &&
+            aEnd == Orientation::Counterclockwise) ||
+            (aStart == Orientation::Counterclockwise &&
+            aEnd == Orientation::Clockwise);
+
+        bool bCrossesA =
+            (bStart == Orientation::Clockwise &&
+            bEnd == Orientation::Counterclockwise) ||
+            (bStart == Orientation::Counterclockwise &&
+            bEnd == Orientation::Clockwise);
+
+        if (aCrossesB && bCrossesA) {
+            return true;
+        }
+        
+
+        return false;
     }
 
 }
