@@ -9,6 +9,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_library(minicad_lib
     src/minicad.cpp
     src/point.cpp
+    src/segment.cpp
     src/vector2D.cpp
     src/numeric.cpp
 )

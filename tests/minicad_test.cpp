@@ -1,5 +1,6 @@
 #include "minicad/numeric.hpp"
 #include "minicad/point.hpp"
+#include "minicad/segment.hpp"
 #include "minicad/vector2D.hpp"
 
 #include <catch2/catch_approx.hpp>
@@ -87,6 +88,31 @@ TEST_CASE("normalizing the zero vector returns the zero vector") {
 
     CHECK(result.x == Approx(0.0));
     CHECK(result.y == Approx(0.0));
+}
+
+TEST_CASE("segment length calculates the distance between its endpoints") {
+    const minicad::Segment segment{{1.0, 2.0}, {4.0, 6.0}};
+
+    CHECK(segment.length() == Approx(5.0));
+}
+
+TEST_CASE("segment midpoint calculates the point halfway between its endpoints") {
+    const minicad::Segment segment{{-2.0, 5.0}, {4.0, -1.0}};
+
+    const minicad::Point2D midpoint = segment.midpoint();
+
+    CHECK(midpoint.x == Approx(1.0));
+    CHECK(midpoint.y == Approx(2.0));
+}
+
+TEST_CASE("segment orientation classifies points relative to the segment") {
+    const minicad::Segment segment{{0.0, 0.0}, {4.0, 0.0}};
+
+    CHECK(segment.orientation({2.0, 1.0}) ==
+          minicad::Orientation::Counterclockwise);
+    CHECK(segment.orientation({2.0, -1.0}) ==
+          minicad::Orientation::Clockwise);
+    CHECK(segment.orientation({2.0, 0.0}) == minicad::Orientation::Collinear);
 }
 
 TEST_CASE("approximatelyEqual compares scalar values") {

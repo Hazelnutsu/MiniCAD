@@ -3,7 +3,7 @@
 
 namespace minicad{
     
-    bool approximatelyEqual(double a, double b, double epsilon){
+    bool approximatelyEqual(double a, double b, double epsilon) {
         return std::abs(a-b) < epsilon;
     }
 }
