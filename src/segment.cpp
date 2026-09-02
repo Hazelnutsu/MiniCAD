@@ -24,6 +24,7 @@ namespace minicad {
 
         return Point2D{midx, midy};
     }
+    
     const Point2D& Segment::start() const {
         return start_;
     }
@@ -65,38 +66,33 @@ namespace minicad {
         }
         return false;
     }
+
     bool intersects(const Segment& a, const Segment& b) {
+        const bool hasEndpointContact =
+            a.contains(b.start()) ||
+            a.contains(b.end()) ||
+            b.contains(a.start()) ||
+            b.contains(a.end());
 
-        if(a.contains(b.start()) || a.contains(b.end()) 
-        || b.contains(a.start()) || b.contains(a.end())){
-
+        if (hasEndpointContact) {
             return true;
         }
 
-        Orientation aStart = b.orientation(a.start());
-        Orientation aEnd   = b.orientation(a.end());
+        const Orientation aStartRelativeToB = b.orientation(a.start());
+        const Orientation aEndRelativeToB = b.orientation(a.end());
+        const Orientation bStartRelativeToA = a.orientation(b.start());
+        const Orientation bEndRelativeToA = a.orientation(b.end());
 
-        Orientation bStart = a.orientation(b.start());
-        Orientation bEnd   = a.orientation(b.end());
+        const auto haveOppositeOrientations = [](const Orientation first,
+                                                  const Orientation second) {
+            return (first == Orientation::Clockwise &&
+                    second == Orientation::Counterclockwise) ||
+                   (first == Orientation::Counterclockwise &&
+                    second == Orientation::Clockwise);
+        };
 
-        bool aCrossesB =
-            (aStart == Orientation::Clockwise &&
-            aEnd == Orientation::Counterclockwise) ||
-            (aStart == Orientation::Counterclockwise &&
-            aEnd == Orientation::Clockwise);
-
-        bool bCrossesA =
-            (bStart == Orientation::Clockwise &&
-            bEnd == Orientation::Counterclockwise) ||
-            (bStart == Orientation::Counterclockwise &&
-            bEnd == Orientation::Clockwise);
-
-        if (aCrossesB && bCrossesA) {
-            return true;
-        }
-        
-
-        return false;
+        return haveOppositeOrientations(aStartRelativeToB, aEndRelativeToB) &&
+               haveOppositeOrientations(bStartRelativeToA, bEndRelativeToA);
     }
 
 }
