@@ -16,4 +16,5 @@ namespace minicad {
     double magnitude(const Vector2D& v);
     double dot(const Vector2D& a, const Vector2D& b);
     Vector2D normalize(const Vector2D& v);
+    double cross(const Vector2D& a, const Vector2D& b);
 }

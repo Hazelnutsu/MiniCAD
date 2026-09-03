@@ -3,6 +3,7 @@
 #include "minicad/numeric.hpp"
 #include <cmath>
 #include <algorithm>
+#include <optional>
 
 namespace minicad {
 
@@ -37,13 +38,13 @@ namespace minicad {
 
         Vector2D ab = vectorBetween(start_, end_);
         Vector2D ap = vectorBetween(start_, p);
-        double cross = ab.x * ap.y - ab.y * ap.x;
+        double crossVal = cross(ab, ap);
 
-        if(std::abs(cross) <= epsilon) {
+        if(std::abs(crossVal) <= epsilon) {
             return Orientation::Collinear;
         }
 
-        if(cross > 0) {
+        if(crossVal > 0) {
             return Orientation::Counterclockwise;
         }
 
@@ -67,32 +68,35 @@ namespace minicad {
         return false;
     }
 
-    bool intersects(const Segment& a, const Segment& b) {
-        const bool hasEndpointContact =
-            a.contains(b.start()) ||
-            a.contains(b.end()) ||
-            b.contains(a.start()) ||
-            b.contains(a.end());
+    std::optional<Point2D> intersection(const Segment& a, const Segment& b) {
+        const Point2D& p = a.start();
+        const Point2D& q = b.start();
 
-        if (hasEndpointContact) {
-            return true;
+        Vector2D r = vectorBetween(a.start(), a.end());
+        Vector2D s = vectorBetween(b.start(), b.end());
+        Vector2D pq = vectorBetween(p, q);
+
+        double denominator = cross(r, s);
+
+        if(approximatelyEqual(denominator, 0.0, epsilon)) {
+            if(!approximatelyEqual(cross(pq, r), 0.0, epsilon)) {
+                //parallel no
+                return std::nullopt;
+            }
+            //collinear
+            return std::nullopt;
         }
 
-        const Orientation aStartRelativeToB = b.orientation(a.start());
-        const Orientation aEndRelativeToB = b.orientation(a.end());
-        const Orientation bStartRelativeToA = a.orientation(b.start());
-        const Orientation bEndRelativeToA = a.orientation(b.end());
+        double t = cross(pq, s) / denominator;
+        double u = cross(pq, r) / denominator;
 
-        const auto haveOppositeOrientations = [](const Orientation first,
-                                                  const Orientation second) {
-            return (first == Orientation::Clockwise &&
-                    second == Orientation::Counterclockwise) ||
-                   (first == Orientation::Counterclockwise &&
-                    second == Orientation::Clockwise);
-        };
 
-        return haveOppositeOrientations(aStartRelativeToB, aEndRelativeToB) &&
-               haveOppositeOrientations(bStartRelativeToA, bEndRelativeToA);
+        if(t >= -epsilon && t <= 1 + epsilon && u >= -epsilon && u <= 1 + epsilon) {
+            Point2D intersectionPoint{p.x + t * r.x, p.y + t * r.y};
+            return intersectionPoint;
+        }
+
+        return std::nullopt;
     }
 
 }

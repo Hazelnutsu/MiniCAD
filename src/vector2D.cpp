@@ -35,6 +35,9 @@ namespace minicad{
     double dot(const Vector2D& a, const Vector2D& b) {
         return a.x * b.x + a.y * b.y;
     }
+    double cross(const Vector2D& a, const Vector2D& b) {
+        return a.x * b.y - a.y * b.x;
+    }
     
     Vector2D normalize(const Vector2D& v) {
         if(v.x == 0 && v.y == 0) {

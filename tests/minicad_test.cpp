@@ -1,7 +1,9 @@
+#include "minicad/minicad.hpp"
 #include "minicad/numeric.hpp"
 #include "minicad/point.hpp"
 #include "minicad/segment.hpp"
 #include "minicad/vector2D.hpp"
+#include "minicad/line.hpp"
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -25,6 +27,12 @@ TEST_CASE("vectorBetween calculates the vector between two points") {
 
     CHECK(result.x == Approx(3.0));
     CHECK(result.y == Approx(4.0));
+}
+
+TEST_CASE("cross calculates the signed area of two vectors") {
+    CHECK(minicad::cross({1.0, 0.0}, {0.0, 1.0}) == Approx(1.0));
+    CHECK(minicad::cross({0.0, 1.0}, {1.0, 0.0}) == Approx(-1.0));
+    CHECK(minicad::cross({1.0, 2.0}, {2.0, 4.0}) == Approx(0.0));
 }
 
 TEST_CASE("vector addition adds corresponding coordinates") {
@@ -105,6 +113,13 @@ TEST_CASE("segment midpoint calculates the point halfway between its endpoints")
     CHECK(midpoint.y == Approx(2.0));
 }
 
+TEST_CASE("segment exposes its start and end points") {
+    const minicad::Segment segment{{-1.0, 2.0}, {3.0, 5.0}};
+
+    CHECK(minicad::approximatelyEqual(segment.start(), {-1.0, 2.0}));
+    CHECK(minicad::approximatelyEqual(segment.end(), {3.0, 5.0}));
+}
+
 TEST_CASE("segment orientation classifies points relative to the segment") {
     const minicad::Segment segment{{0.0, 0.0}, {4.0, 0.0}};
 
@@ -136,20 +151,43 @@ TEST_CASE("segment contains points within endpoint tolerance but rejects points 
     CHECK_FALSE(segment.contains({2.0, minicad::epsilon / 2.0}));
 }
 
-TEST_CASE("intersects detects crossing, disjoint, touching, and overlapping segments") {
+TEST_CASE("intersection returns the point where segments cross") {
     const minicad::Segment crossingA{{0.0, 0.0}, {4.0, 4.0}};
     const minicad::Segment crossingB{{0.0, 4.0}, {4.0, 0.0}};
-    CHECK(minicad::intersects(crossingA, crossingB));
 
+    const auto result = minicad::intersection(crossingA, crossingB);
+
+    REQUIRE(result.has_value());
+    CHECK(result->x == Approx(2.0));
+    CHECK(result->y == Approx(2.0));
+}
+
+TEST_CASE("intersection returns no point for disjoint segments") {
     const minicad::Segment disjointA{{0.0, 0.0}, {1.0, 1.0}};
     const minicad::Segment disjointB{{2.0, 0.0}, {3.0, 1.0}};
-    CHECK_FALSE(minicad::intersects(disjointA, disjointB));
 
-    const minicad::Segment touching{{4.0, 4.0}, {6.0, 2.0}};
-    CHECK(minicad::intersects(crossingA, touching));
+    CHECK_FALSE(minicad::intersection(disjointA, disjointB).has_value());
+}
 
-    const minicad::Segment overlapping{{2.0, 2.0}, {6.0, 6.0}};
-    CHECK(minicad::intersects(crossingA, overlapping));
+TEST_CASE("intersection returns a shared endpoint") {
+    const minicad::Segment first{{0.0, 0.0}, {4.0, 4.0}};
+    const minicad::Segment second{{4.0, 4.0}, {6.0, 2.0}};
+
+    const auto result = minicad::intersection(first, second);
+
+    REQUIRE(result.has_value());
+    CHECK(result->x == Approx(4.0));
+    CHECK(result->y == Approx(4.0));
+}
+
+TEST_CASE("intersection returns no point for parallel or overlapping segments") {
+    const minicad::Segment parallelA{{0.0, 0.0}, {4.0, 0.0}};
+    const minicad::Segment parallelB{{0.0, 1.0}, {4.0, 1.0}};
+    CHECK_FALSE(minicad::intersection(parallelA, parallelB).has_value());
+
+    const minicad::Segment overlappingA{{0.0, 0.0}, {4.0, 4.0}};
+    const minicad::Segment overlappingB{{2.0, 2.0}, {6.0, 6.0}};
+    CHECK_FALSE(minicad::intersection(overlappingA, overlappingB).has_value());
 }
 
 TEST_CASE("approximatelyEqual compares scalar values") {
@@ -171,4 +209,43 @@ TEST_CASE("approximatelyEqual compares points") {
     CHECK_FALSE(minicad::approximatelyEqual(
         point,
         {1.0 + minicad::epsilon * 2.0, 2.0}));
+}
+
+TEST_CASE("line stores its point and direction") {
+    const minicad::Point2D point{1.0, 2.0};
+    const minicad::Vector2D direction{3.0, 4.0};
+    const minicad::Line line{point, direction};
+
+    CHECK(minicad::approximatelyEqual(line.point(), point));
+    CHECK(line.direction().x == Approx(3.0));
+    CHECK(line.direction().y == Approx(4.0));
+}
+
+TEST_CASE("line intersection returns the intersection of infinite lines") {
+    const minicad::Line first{{0.0, 0.0}, {1.0, 1.0}};
+    const minicad::Line second{{0.0, 4.0}, {1.0, -1.0}};
+
+    const auto result = minicad::intersection(first, second);
+
+    REQUIRE(result.has_value());
+    CHECK(result->x == Approx(2.0));
+    CHECK(result->y == Approx(2.0));
+}
+
+TEST_CASE("line intersection returns no point for parallel or coincident lines") {
+    const minicad::Line parallelA{{0.0, 0.0}, {1.0, 0.0}};
+    const minicad::Line parallelB{{0.0, 1.0}, {1.0, 0.0}};
+    CHECK_FALSE(minicad::intersection(parallelA, parallelB).has_value());
+
+    const minicad::Line coincidentA{{0.0, 0.0}, {1.0, 0.0}};
+    const minicad::Line coincidentB{{2.0, 0.0}, {1.0, 0.0}};
+    CHECK_FALSE(minicad::intersection(coincidentA, coincidentB).has_value());
+}
+
+TEST_CASE("name identifies the project") {
+    CHECK(minicad::name() == "MiniCAD");
+}
+
+TEST_CASE("run completes successfully") {
+    CHECK(minicad::run() == 0);
 }

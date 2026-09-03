@@ -1,5 +1,6 @@
 #pragma once
 #include "minicad/point.hpp"
+#include <optional>
 
 namespace minicad {
 
@@ -24,5 +25,5 @@ namespace minicad {
             Point2D start_;
             Point2D end_;
     };
-    bool intersects(const Segment& a, const Segment& b);
+    std::optional<Point2D> intersection(const Segment& a, const Segment& b);
 }
