@@ -23,8 +23,18 @@ namespace minicad{
         return v;
     }
 
-    Vector2D operator*(const Vector2D& v, double scalar) {
+    Vector2D operator*(double scalar, const Vector2D& v) {
         return Vector2D{v.x * scalar, v.y * scalar};
+    }
+
+    Point2D operator+(const Point2D& p, const Vector2D& v) {
+        Point2D moved {p.x + v.x, p.y + v.y};
+        return moved;
+    }
+
+    Point2D operator-(const Point2D& p, const Vector2D& v) {
+        Point2D moved {p.x - v.x, p.y - v.y};
+        return moved;
     }
 
     double magnitude(const Vector2D& v) {
@@ -35,6 +45,7 @@ namespace minicad{
     double dot(const Vector2D& a, const Vector2D& b) {
         return a.x * b.x + a.y * b.y;
     }
+
     double cross(const Vector2D& a, const Vector2D& b) {
         return a.x * b.y - a.y * b.x;
     }

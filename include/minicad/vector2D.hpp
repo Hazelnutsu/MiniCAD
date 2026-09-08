@@ -12,7 +12,9 @@ namespace minicad {
     Vector2D vectorBetween(const Point2D& from, const Point2D& to);
     Vector2D operator+(const Vector2D& a, const Vector2D& b);
     Vector2D operator-(const Vector2D& a, const Vector2D& b);
-    Vector2D operator*(const Vector2D& v, double scalar);
+    Vector2D operator*(double scalar, const Vector2D& v);
+    Point2D operator+(const Point2D& p, const Vector2D& v);
+    Point2D operator-(const Point2D& p, const Vector2D& v);
     double magnitude(const Vector2D& v);
     double dot(const Vector2D& a, const Vector2D& b);
     Vector2D normalize(const Vector2D& v);

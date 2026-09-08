@@ -15,7 +15,7 @@ namespace minicad {
     const Vector2D& Line::direction() const {
         return direction_;
     }
-
+    //calculates intersection points between 2 lines
     std::optional<Point2D> intersection(const Line& a, const Line& b) {
         const Point2D& p = a.point();
         const Point2D& q = b.point();

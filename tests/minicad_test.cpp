@@ -4,9 +4,13 @@
 #include "minicad/segment.hpp"
 #include "minicad/vector2D.hpp"
 #include "minicad/line.hpp"
+#include "minicad/circle.hpp"
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
+
+#include <numbers>
+#include <stdexcept>
 
 using Catch::Approx;
 
@@ -52,7 +56,7 @@ TEST_CASE("vector subtraction subtracts corresponding coordinates") {
 }
 
 TEST_CASE("scalar multiplication scales both coordinates") {
-    const minicad::Vector2D result = minicad::Vector2D{2.0, -3.0} * 2.5;
+    const minicad::Vector2D result = 2.5 * minicad::Vector2D{2.0, -3.0};
 
     CHECK(result.x == Approx(5.0));
     CHECK(result.y == Approx(-7.5));
@@ -73,6 +77,7 @@ TEST_CASE("vectorBetween allows a zero-length segment") {
 TEST_CASE("magnitude calculates a vector's length") {
     CHECK(minicad::magnitude({3.0, 4.0}) == Approx(5.0));
     CHECK(minicad::magnitude({0.0, 0.0}) == Approx(0.0));
+    CHECK(minicad::magnitude({1.0, 0.0}) == Approx(1.0));
 }
 
 TEST_CASE("dot calculates the dot product") {
@@ -240,6 +245,172 @@ TEST_CASE("line intersection returns no point for parallel or coincident lines")
     const minicad::Line coincidentA{{0.0, 0.0}, {1.0, 0.0}};
     const minicad::Line coincidentB{{2.0, 0.0}, {1.0, 0.0}};
     CHECK_FALSE(minicad::intersection(coincidentA, coincidentB).has_value());
+}
+
+TEST_CASE("a tangent line intersects a circle at exactly one point") {
+    minicad::Circle circle{{0.0, 0.0}, 5.0};
+    const minicad::Line tangent{{5.0, -10.0}, {0.0, 1.0}};
+
+    const auto intersections = circle.intersects(tangent, circle);
+
+    REQUIRE(intersections.size() == 1);
+    CHECK(minicad::approximatelyEqual(intersections.front(), {5.0, 0.0}));
+}
+
+TEST_CASE("adding and subtracting vectors moves a point") {
+    const minicad::Point2D point{2.0, 3.0};
+    const minicad::Vector2D offset{-4.0, 5.0};
+
+    CHECK(minicad::approximatelyEqual(point + offset, {-2.0, 8.0}));
+    CHECK(minicad::approximatelyEqual(point - offset, {6.0, -2.0}));
+}
+
+TEST_CASE("a degenerate segment has zero length and contains only its endpoint") {
+    const minicad::Segment segment{{5.0, 5.0}, {5.0, 5.0}};
+
+    CHECK(segment.length() == Approx(0.0));
+    CHECK(minicad::approximatelyEqual(segment.midpoint(), {5.0, 5.0}));
+    CHECK(segment.contains({5.0, 5.0}));
+    CHECK_FALSE(segment.contains({6.0, 5.0}));
+}
+
+TEST_CASE("intersection returns the point where segments form a T") {
+    const minicad::Segment horizontal{{0.0, 0.0}, {4.0, 0.0}};
+    const minicad::Segment vertical{{2.0, 0.0}, {2.0, 3.0}};
+
+    const auto result = minicad::intersection(horizontal, vertical);
+
+    REQUIRE(result.has_value());
+    CHECK(minicad::approximatelyEqual(*result, {2.0, 0.0}));
+}
+
+TEST_CASE("identical segments have no unique intersection point") {
+    const minicad::Segment first{{-1.0, 2.0}, {3.0, 6.0}};
+    const minicad::Segment second{{-1.0, 2.0}, {3.0, 6.0}};
+
+    CHECK_FALSE(minicad::intersection(first, second).has_value());
+}
+
+TEST_CASE("circle rejects a negative radius but accepts a zero radius") {
+    CHECK_THROWS_AS(
+        minicad::Circle(minicad::Point2D{0.0, 0.0}, -1.0),
+        std::invalid_argument);
+
+    minicad::Circle pointCircle{{2.0, 3.0}, 0.0};
+    CHECK(pointCircle.area() == Approx(0.0));
+    CHECK(pointCircle.circumference() == Approx(0.0));
+}
+
+TEST_CASE("circle calculates its area and circumference") {
+    minicad::Circle circle{{2.0, -3.0}, 4.0};
+
+    CHECK(circle.area() == Approx(16.0 * std::numbers::pi));
+    CHECK(circle.circumference() == Approx(8.0 * std::numbers::pi));
+}
+
+TEST_CASE("circle classifies points relative to its boundary") {
+    minicad::Circle circle{{0.0, 0.0}, 5.0};
+
+    CHECK(circle.relationTo({0.0, 0.0}) ==
+          minicad::PointCircleRelation::Inside);
+    CHECK(circle.relationTo({5.0, 0.0}) ==
+          minicad::PointCircleRelation::OnBoundry);
+    CHECK(circle.relationTo({5.0 + minicad::epsilon / 2.0, 0.0}) ==
+          minicad::PointCircleRelation::OnBoundry);
+    CHECK(circle.relationTo({6.0, 0.0}) ==
+          minicad::PointCircleRelation::Outside);
+}
+
+TEST_CASE("circle classifies every circle-circle relationship") {
+    minicad::Circle circle{{0.0, 0.0}, 5.0};
+
+    minicad::Circle separate{{11.0, 0.0}, 5.0};
+    CHECK(circle.relationTo(separate) ==
+          minicad::CircleCircleRelation::Seperate);
+
+    minicad::Circle externallyTangent{{10.0, 0.0}, 5.0};
+    CHECK(circle.relationTo(externallyTangent) ==
+          minicad::CircleCircleRelation::ExternallyTangent);
+
+    minicad::Circle intersecting{{6.0, 0.0}, 5.0};
+    CHECK(circle.relationTo(intersecting) ==
+          minicad::CircleCircleRelation::Intersecting);
+
+    minicad::Circle internallyTangent{{3.0, 0.0}, 2.0};
+    CHECK(circle.relationTo(internallyTangent) ==
+          minicad::CircleCircleRelation::InternallyTanget);
+
+    minicad::Circle contained{{2.0, 0.0}, 1.0};
+    CHECK(circle.relationTo(contained) ==
+          minicad::CircleCircleRelation::Contained);
+
+    minicad::Circle identical{{0.0, 0.0}, 5.0};
+    CHECK(circle.relationTo(identical) ==
+          minicad::CircleCircleRelation::Identical);
+}
+
+TEST_CASE("a line outside a circle has no intersections") {
+    minicad::Circle circle{{0.0, 0.0}, 5.0};
+    const minicad::Line outside{{0.0, 6.0}, {1.0, 0.0}};
+
+    CHECK(circle.intersects(outside, circle).empty());
+}
+
+TEST_CASE("a secant line intersects a circle at two points") {
+    minicad::Circle circle{{0.0, 0.0}, 5.0};
+    const minicad::Line secant{{-10.0, 0.0}, {2.0, 0.0}};
+
+    const auto intersections = circle.intersects(secant, circle);
+
+    REQUIRE(intersections.size() == 2);
+    CHECK((minicad::approximatelyEqual(intersections[0], {-5.0, 0.0}) ||
+           minicad::approximatelyEqual(intersections[1], {-5.0, 0.0})));
+    CHECK((minicad::approximatelyEqual(intersections[0], {5.0, 0.0}) ||
+           minicad::approximatelyEqual(intersections[1], {5.0, 0.0})));
+}
+
+TEST_CASE("separate, contained, and identical circles return no intersection points") {
+    minicad::Circle circle{{0.0, 0.0}, 5.0};
+    minicad::Circle separate{{11.0, 0.0}, 5.0};
+    minicad::Circle contained{{2.0, 0.0}, 1.0};
+    minicad::Circle identical{{0.0, 0.0}, 5.0};
+
+    CHECK(circle.circleIntersection(circle, separate).empty());
+    CHECK(circle.circleIntersection(circle, contained).empty());
+    CHECK(circle.circleIntersection(circle, identical).empty());
+}
+
+TEST_CASE("externally tangent circles return their single touching point") {
+    minicad::Circle first{{0.0, 0.0}, 5.0};
+    minicad::Circle second{{8.0, 0.0}, 3.0};
+
+    const auto intersections = first.circleIntersection(first, second);
+
+    REQUIRE(intersections.size() == 1);
+    CHECK(minicad::approximatelyEqual(intersections.front(), {5.0, 0.0}));
+}
+
+TEST_CASE("internally tangent circles return their single touching point") {
+    minicad::Circle outer{{0.0, 0.0}, 5.0};
+    minicad::Circle inner{{3.0, 0.0}, 2.0};
+
+    const auto intersections = outer.circleIntersection(outer, inner);
+
+    REQUIRE(intersections.size() == 1);
+    CHECK(minicad::approximatelyEqual(intersections.front(), {5.0, 0.0}));
+}
+
+TEST_CASE("intersecting circles return both intersection points") {
+    minicad::Circle first{{0.0, 0.0}, 5.0};
+    minicad::Circle second{{6.0, 0.0}, 5.0};
+
+    const auto intersections = first.circleIntersection(first, second);
+
+    REQUIRE(intersections.size() == 2);
+    CHECK((minicad::approximatelyEqual(intersections[0], {3.0, -4.0}) ||
+           minicad::approximatelyEqual(intersections[1], {3.0, -4.0})));
+    CHECK((minicad::approximatelyEqual(intersections[0], {3.0, 4.0}) ||
+           minicad::approximatelyEqual(intersections[1], {3.0, 4.0})));
 }
 
 TEST_CASE("name identifies the project") {

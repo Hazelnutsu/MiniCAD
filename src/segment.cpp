@@ -33,7 +33,7 @@ namespace minicad {
     const Point2D& Segment::end() const {
         return end_;
     }
-
+    //checks the relation between a point and the segment's orientation
     Orientation Segment:: orientation(const Point2D& p) const {
 
         Vector2D ab = vectorBetween(start_, end_);
@@ -50,7 +50,7 @@ namespace minicad {
 
         return Orientation::Clockwise;
     }
-    
+    //checks whether a point is on a segment
     bool Segment::contains(const Point2D& p) const {
         
         if(orientation(p) == Orientation::Collinear) {
@@ -67,7 +67,7 @@ namespace minicad {
         }
         return false;
     }
-
+    //calculates intersection points between 2 segments
     std::optional<Point2D> intersection(const Segment& a, const Segment& b) {
         const Point2D& p = a.start();
         const Point2D& q = b.start();

@@ -13,6 +13,7 @@ add_library(minicad_lib
     src/segment.cpp
     src/vector2D.cpp
     src/numeric.cpp
+    src/circle.cpp
 )
 
 target_include_directories(minicad_lib PUBLIC include)
